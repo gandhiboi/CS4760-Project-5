@@ -11,15 +11,34 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <signal.h>
+#include <sys/time.h>
 
 #include "shared.h"
 
-FILE * fp;
+#define MAX_PROCESS 18
+#define SECONDS 5
+
+SharedMemory * shared = NULL;
+FILE * fp = NULL;
+Message msg;
+
+FrameTable ftable[256];
+int pids[MAX_PROCESS];
+
+static int pMsgQID;
+static int cMsgQID;
 
 void logCheck(char*);
 void usage();
+void allocation();
+void setTimer(int);
+void signalHandler(int);
 
 int main(int argc, char* argv[]) {
+
+	signal(SIGINT, signalHandler);
+	signal(SIGALRM, signalHandler);
 
 	int opt;
 	int m = 18;
@@ -46,17 +65,40 @@ int main(int argc, char* argv[]) {
 		
 	}
 	
-	printf("m: %d\n", m);
-	printf("fileName: %s\n", fileName);
-	
 	logCheck(fileName);
+	allocation();
+	
+	setTimer(SECONDS);
+	
+	sleep(10);
+	
+	printf("m: %d\n", m);
+	printf("fileName: %s\n", fileName);	
 	
 	fprintf(fp, "i like dogs\n");
 	
+	shared->pcb.ptable.delimiter = 15;
+	
+	fprintf(fp, "delimter value: %d\n", shared->pcb.ptable.delimiter);
+	
 	fclose(fp);
 	
-
+	releaseSharedMemory();
+	deleteMessageQueues();
+	
 	return EXIT_SUCCESS;
+}
+
+void allocation() {
+
+	allocateSharedMemory();
+	allocateMessageQueues();
+	
+	shared = shmemPtr();
+	
+	pMsgQID = parentMsgQptr();
+	cMsgQID = childMsgQptr();
+
 }
 
 void logCheck(char * file) {
@@ -66,6 +108,55 @@ void logCheck(char * file) {
 		perror("oss.c: error: failed to open log file");
 		exit(EXIT_FAILURE);
 	}
+}
+
+void signalHandler(int signal) {
+
+	fclose(fp);
+	releaseSharedMemory();
+	deleteMessageQueues();
+
+	if(signal == SIGINT) {
+		printf("oss.c: terminating: ctrl + c signal handler\n");
+		fflush(stdout);
+	}
+	else if(signal == SIGALRM) {
+		printf("oss.c: terminating: timer signal handler\n");
+		fflush(stdout);
+	}
+	
+	int i;
+	for(i = 0; i < 18; i++) {
+		kill(pids[i], SIGTERM);
+	}
+	
+	while(wait(NULL) > 0);
+	exit(EXIT_SUCCESS);
+}
+
+void setTimer(int seconds) {
+
+	struct sigaction act;
+	act.sa_handler = &signalHandler;
+	act.sa_flags = SA_RESTART;
+	
+	if(sigaction(SIGALRM, &act, NULL) == -1) {
+		perror("oss.c: error: failed to set up sigaction handler for setTimer()");
+		exit(EXIT_FAILURE);
+	}
+	
+	struct itimerval value;
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_usec = 0;
+	
+	value.it_value.tv_sec = seconds;
+	value.it_value.tv_usec = 0;
+	
+	if(setitimer(ITIMER_REAL, &value, NULL)) {
+		perror("oss.c: error: failed to set the timer");
+		exit(EXIT_FAILURE);
+	}
+
 }
 
 void usage() {

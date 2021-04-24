@@ -7,13 +7,19 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+#include <stdbool.h>
+
 #define MAX_USER_PROCESS 18
 #define MEMORY_SIZE 256
 
 //Structure for Message Queue
 typedef struct {
-	long mtype;
-	char mtext[100];
+	long mtype;			
+	int pid;			
+	int address;			
+	bool terminate;		
+	int page;			
+	int readOrWrite;		//read 1 write 0
 } Message;
 
 //Structure for Simulated Clock
@@ -22,24 +28,32 @@ typedef struct {
 	unsigned int ns;
 } SimulatedClock;
 
-//Structure for shared memory for PCB and simulated clock
-//missing more stuff will figure out friday
-typedef struct {
-	int userPID[MAX_USER_PROCESS];
-} SharedMemory;
-
 //Structure for page table
 typedef struct {
 	int pages[32];
 	int delimiter;
+	int offset;
 } PageTable;
+
+typedef struct {
+	PageTable ptable;
+	int pid;
+} ProcessControlBlock;
 
 //Structure for frame table
 typedef struct {
-	int frames[MEMORY_SIZE];
-	int dirtyBit[MEMORY_SIZE];
-	int secondChanceBit[MEMORY_SIZE];
+	int frames;
+	int dirtyBit;
+	int referenceBit;
+	int read;
+	int write;
+	int pid;
 } FrameTable;
+
+typedef struct {
+	SimulatedClock simClock;
+	ProcessControlBlock pcb;
+} SharedMemory;
 
 void allocateSharedMemory();
 void releaseSharedMemory();
