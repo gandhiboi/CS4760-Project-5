@@ -1,4 +1,4 @@
-#implementation taken from geeksforgeeks; used on last project (4)
+//implementation taken from geeksforgeeks; used on last project (4)
 
 #include <stdio.h>
 #include <stdlib.h>
