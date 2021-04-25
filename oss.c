@@ -15,25 +15,41 @@
 #include <sys/time.h>
 
 #include "shared.h"
+#include "queue.h"
 
+//macros
 #define MAX_PROCESS 18
 #define SECONDS 5
 
+//var for shared memory; file pointer; msg q
 SharedMemory * shared = NULL;
+Queue * fifoQ;
 FILE * fp = NULL;
 Message msg;
 
+//frame table and array to keep track of process ids
 FrameTable ftable[256];
 int pids[MAX_PROCESS];
 
+//msg q ids
 static int pMsgQID;
 static int cMsgQID;
 
+//statistics variables
+float numMemoryAccessPerSec;
+float numPageFaultsPerMemoryAccess;
+float avgMemoryAccessSpeed;
+float numSegFaultsPerMemoryAccess;
+
+//function prototypes
+void memoryManager();
 void logCheck(char*);
 void usage();
 void allocation();
 void setTimer(int);
 void signalHandler(int);
+void displayStatistics();
+void displayMemoryMap();
 
 int main(int argc, char* argv[]) {
 
@@ -51,10 +67,14 @@ int main(int argc, char* argv[]) {
 				exit(EXIT_SUCCESS);
 			
 			case 'm':
-				if(!isdigit(*optarg) || (m = atoi(optarg)) < 0 || (m = atoi(optarg)) > 18) {
-					perror("oss.c: error: invalid max process");
+				if((m = atoi(optarg)) < 0 || (m = atoi(optarg)) > 18) {
+					perror("oss.c: error: input beyond max process size; set to default 18");
+					m = 18;
+				}
+				else {
+					perror("oss.c: error: invalid process size");
 					usage();
-					exit(EXIT_FAILURE);
+					exit(EXIT_SUCCESS);
 				}
 				break;
 			default:
@@ -65,21 +85,23 @@ int main(int argc, char* argv[]) {
 		
 	}
 	
+	printf("========================================\n");
+	printf("\t\tMEMORY MANAGER\n");
+	printf("========================================\n");
+	
 	logCheck(fileName);
 	allocation();
 	
 	setTimer(SECONDS);
 	
-	sleep(10);
-	
 	printf("m: %d\n", m);
 	printf("fileName: %s\n", fileName);	
 	
-	fprintf(fp, "i like dogs\n");
-	
 	shared->pcb.ptable.delimiter = 15;
 	
-	fprintf(fp, "delimter value: %d\n", shared->pcb.ptable.delimiter);
+	fprintf(fp, "delimiter value: %d\n", shared->pcb.ptable.delimiter);
+	
+	execl("./user", "user", (char*)NULL);
 	
 	fclose(fp);
 	
@@ -89,8 +111,12 @@ int main(int argc, char* argv[]) {
 	return EXIT_SUCCESS;
 }
 
-void allocation() {
+void memoryManager() {
 
+}
+
+//allocates/attaches to shared memory; also creates fifo queue
+void allocation() {
 	allocateSharedMemory();
 	allocateMessageQueues();
 	
@@ -98,9 +124,11 @@ void allocation() {
 	
 	pMsgQID = parentMsgQptr();
 	cMsgQID = childMsgQptr();
-
+	
+	fifoQ = createQueue(MAX_PROCESS);
 }
 
+//checks to see if log file can be opened
 void logCheck(char * file) {
 	fp = fopen(file, "w");
 
@@ -110,8 +138,8 @@ void logCheck(char * file) {
 	}
 }
 
+//signal handler for ctrl + c and timer
 void signalHandler(int signal) {
-
 	fclose(fp);
 	releaseSharedMemory();
 	deleteMessageQueues();
@@ -134,8 +162,8 @@ void signalHandler(int signal) {
 	exit(EXIT_SUCCESS);
 }
 
+//timer for terminating program; not needed but just in case
 void setTimer(int seconds) {
-
 	struct sigaction act;
 	act.sa_handler = &signalHandler;
 	act.sa_flags = SA_RESTART;
@@ -156,9 +184,9 @@ void setTimer(int seconds) {
 		perror("oss.c: error: failed to set the timer");
 		exit(EXIT_FAILURE);
 	}
-
 }
 
+//help menu
 void usage() {
 	printf("======================================================================\n");
         printf("\t\t\t\tUSAGE\n");
