@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <sys/msg.h>
 
 #include "shared.h"
 
@@ -30,6 +31,10 @@ int main(int argc, char * argv[]) {
 	int numPages = (rand() % 32);
 	int temp = 0;
 	bool flag = true;
+	
+	msgrcv(pMsgQID, &msg, sizeof(Message), 0, 1);
+	
+	printf("user.c: idk yet: %d\n", msg.page);
 	
 	while(flag) {
 	
@@ -68,7 +73,7 @@ int main(int argc, char * argv[]) {
 	
 	}
 	
-	printf("user.c: delimter value: %d\n", shared->pcb.ptable.delimiter);
+	printf("user.c: delimiter value: %d\n", shared->pcb.ptable.delimiter);
 	
 	releaseSharedMemory();
 	deleteMessageQueues();

@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <sys/msg.h>
 
 #include "shared.h"
 #include "queue.h"
@@ -20,6 +21,9 @@
 //macros
 #define MAX_PROCESS 18
 #define SECONDS 5
+
+//tracker var
+int numLines;
 
 //var for shared memory; file pointer; msg q
 SharedMemory * shared = NULL;
@@ -43,6 +47,7 @@ float numSegFaultsPerMemoryAccess;
 
 //function prototypes
 void memoryManager();
+void initPCB();
 void logCheck(char*);
 void usage();
 void allocation();
@@ -59,6 +64,8 @@ int main(int argc, char* argv[]) {
 	int opt;
 	int m = 18;
 	char * fileName = "output.log";
+	
+	numLines = 0;
 	
 	while((opt = getopt(argc, argv, "hm:")) != -1) {
 		switch(opt) {	
@@ -85,26 +92,30 @@ int main(int argc, char* argv[]) {
 		
 	}
 	
-	printf("========================================\n");
+	printf("==============================================\n");
 	printf("\t\tMEMORY MANAGER\n");
-	printf("========================================\n");
+	printf("==============================================\n");
 	
 	logCheck(fileName);
 	allocation();
+	initPCB();
 	
 	setTimer(SECONDS);
 	
 	printf("m: %d\n", m);
-	printf("fileName: %s\n", fileName);	
+	printf("fileName: %s\n", fileName);
 	
 	shared->pcb.ptable.delimiter = 15;
+	msg.mtype = 1;
+	msg.page = 23;
+	msgsnd(pMsgQID, &msg, sizeof(Message), 0);
+	memoryManager();
 	
 	fprintf(fp, "delimiter value: %d\n", shared->pcb.ptable.delimiter);
 	
 	execl("./user", "user", (char*)NULL);
 	
 	fclose(fp);
-	
 	releaseSharedMemory();
 	deleteMessageQueues();
 	
@@ -112,6 +123,29 @@ int main(int argc, char* argv[]) {
 }
 
 void memoryManager() {
+
+	//while(1) {
+		//numLines++;
+		
+		if(numLines >= 5000) {
+			printf("Max lines (5000) reached in 'output.log': terminating program");
+			kill(-getpid(), SIGINT);
+			//break;
+		}
+	//}
+	
+
+}
+
+void initPCB() {
+	int i;
+	for(i = 0; i < 256; i++) {
+		ftable[i].frames = -1;
+		ftable[i].dirtyBit = 0;
+		ftable[i].referenceBit = 0;
+		ftable[i].pid = -1;
+	
+	}
 
 }
 
@@ -125,7 +159,7 @@ void allocation() {
 	pMsgQID = parentMsgQptr();
 	cMsgQID = childMsgQptr();
 	
-	fifoQ = createQueue(MAX_PROCESS);
+	fifoQ = createQueue(256);
 }
 
 //checks to see if log file can be opened
