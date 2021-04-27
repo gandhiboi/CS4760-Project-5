@@ -48,11 +48,13 @@ typedef struct {
 	int read;
 	int write;
 	int pid;
+	int SC;
 } FrameTable;
 
 typedef struct {
 	SimulatedClock simClock;
 	ProcessControlBlock pcb;
+	int segFault;
 } SharedMemory;
 
 void allocateSharedMemory();

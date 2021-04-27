@@ -18,65 +18,76 @@ void allocation();
 
 int main(int argc, char * argv[]) {
 
-	allocation();							//allocates shared memory/message queues
-	int cPID = getpid();
-	srand(cPID);							//seeded wtih pid
+	allocation();								//allocates shared memory/message queues
+	pid_t cPID = getpid();
+	srand(cPID);								//seeded wtih pid
 	
-	int terminate;							//term chance 10% or 15% idk yet
-	int segFault;							//seg fault 5% chance
-	int read;							//70% chance read, 30% chance write
-	int write;
-	int memoryReference;						//either read or write; read: 1, write: 0
-	int accessPage;						//page being accessed
-	int numPages = (rand() % 32);
-	int temp = 0;
-	bool flag = true;
+	int location = atoi(argv[1]);
+	int terminateChance;							//term chance 10% or 15% idk yet
+	int segFaultChance;							//seg fault 5% chance
+	int readChance;							//70% chance read
+	int memoryReferenceFlag;						//either read or write; read: 1, write: 0
+	int accessPage;							//page being accessed
+	int numPages = (rand() % 32) + 1;					//determines number of pages needed
 	
-	msgrcv(pMsgQID, &msg, sizeof(Message), 0, 1);
+	int i;
+	for(i = 0; i < 31; i++) {
+		shared[location].pcb.ptable.pages[i] = -1;
+	}
 	
-	printf("user.c: idk yet: %d\n", msg.page);
+	shared[location].pcb.ptable.delimiter = numPages;
 	
-	while(flag) {
+	//printf("user.c: Process %d has %d pages\n", getpid(), shared[location].pcb.ptable.delimiter);
 	
-		temp++;
-		printf("user.c: temp: %d\n", temp);
+	//sets basic msg q components
+	msg.mtype = cPID;
+	msg.pid = cPID;
+	msg.address = location;
 	
-		read = (rand() % 100) + 1;
-		write = (rand() % 100) + 1;
-		segFault = (rand() % 100) + 1;
-		terminate = (rand() % 100) + 1;
+	while(1) {
 	
-		//15% (atm) to terminate and WILL SEND MSG TO OSS THAT ITS TERMINATING
-		if(terminate > 85) {
-			printf("user.c: %d is terminating\n", cPID);
+		//generates random amount to see percent read/write, seg fault, and termination
+		readChance = (rand() % 100) + 1;
+		segFaultChance = (rand() % 100) + 1;
+		terminateChance = (rand() % 100) + 1;
+	
+		//15% (atm) TO TERMINATE AND WILL SEND MSG TO OSS THAT ITS TERMINATING
+		if(terminateChance > 90) {
+			msg.terminate = true;
+			msg.mtype = getppid();
+			msgsnd(cMsgQID, &msg, sizeof(Message), 1);
+			break;
+			
 		}
 		
 		//SIMULATES CHANCE FOR SEGFAULT 5%; ELSE ACCESS RANDOM PAGE
-		if(segFault > 95) {
-			accessPage = numPages + 1;
+		if(segFaultChance > 99) {
+			shared->segFault += 1;
 		}
 		else {
-			accessPage = (rand() % numPages);
+			accessPage = (rand() % numPages) + 1;
 		}
 		
-		if(write < 30) {
-			memoryReference = 0;
+		//DETERMINES IF IT WILL EITHER READ OR WRITE; SENDS MESSAGE VIA MSG Q TO OSS
+		if(readChance < 30) {
+			memoryReferenceFlag = 0;				//write
 		}
-		else if (read > 30) {
-			memoryReference = 1;
+		else {
+			memoryReferenceFlag = 1;				//read
 		}
 		
-		if(temp >= 10) {
-			flag = false;
-		}
-
-	
+		
+		msg.page = accessPage;
+		msg.readOrWrite = memoryReferenceFlag;
+		msg.mtype = getppid();
+		
+		//sends message to oss with respective information for frame table
+		msgsnd(cMsgQID, &msg, sizeof(Message), 1);
+		
+		//process is blocked until a message is received from OSS 
+		msgrcv(pMsgQID, &msg, sizeof(Message), cPID, 0);
+		
 	}
-	
-	printf("user.c: delimiter value: %d\n", shared->pcb.ptable.delimiter);
-	
-	releaseSharedMemory();
-	deleteMessageQueues();
 	
 	return EXIT_SUCCESS;
 

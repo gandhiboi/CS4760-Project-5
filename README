@@ -1,0 +1,90 @@
+# Project 5 - Memory Management
+# Kenan Krijestorac
+# 26 April 2021
+# Completed 26 April 2021 @ 11:31 pm :(
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SOURCES
+
+- https://www.geeksforgeeks.org/second-chance-or-clock-page-replacement-policy/
+- https://www.geeksforgeeks.org/page-table-entries-in-page-table/
+- http://www.mathcs.emory.edu/~cheung/Courses/355/Syllabus/9-virtual-mem/SC-replace.html
+- https://github.com/adpoe/Page-Replacement-Simulator/blob/master/clock.py
+- https://github.com/davisdoan/CS570_A2/blob/master/secondchance.c
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISSUES
+
+- i was having issues displaying a proper memory map; therefore its not correctly displaying
+  dirty bits nor the second chance bit
+- i feel as though the number of page faults that I was getting was wrong
+- genuinely didn't have enough time to work on this project; work and personal issues devoured me
+  this past month
+- also my project always terminates to do a log file restriction or timer; usually log file
+- if project gets stuck, then rerun it; this is due to message queues going to quickly i believe
+  and as a result i had to include a while loop so the message would be able to be received; happened
+  in my last project too
+- memory layout is only displayed once on the terminal and not log file because it takes up too much space
+- probably some more issues that i am unaware of but I did not have enough time to debug; lack of sleep
+  has also made me quite unaware
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HOW TO RUN
+
+1. Type 'make' in the terminal
+2. Run as './oss' followed by the options; if no options are specified, then defaults will be provided [-m 18] is default
+
+   e.g. ./oss -s -10
+
+3. Wait for program to finish; it only displays the statistics and the memory layout
+4. Type 'make clean' to remove executables, object files, and log file
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+VERSION CONTROL
+
+- repository is set to private; will make public 04/30/2021
+- didn't commit/push the last day because it was basically transferring pseudo code to live code
+- https://github.com/gandhiboi/CS4760-Project-5
+
+Commits on Apr 25, 2021
+msg q working; ready to put pseudo code to test
+
+@gandhiboi
+gandhiboi committed yesterday
+ 
+more basic setup; have an idea of what i am doing
+
+@gandhiboi
+gandhiboi committed 2 days ago
+ 
+Commits on Apr 23, 2021
+forgot how to comment lol
+
+@gandhiboi
+gandhiboi committed 3 days ago
+ 
+shared memory and msg q setup; might be doomed for this project
+
+@gandhiboi
+gandhiboi committed 3 days ago
+ 
+added foundations; never have I been so busy
+
+@gandhiboi
+gandhiboi committed 4 days ago
+ 
+Commits on Apr 14, 2021
+initial commit
+
+@gandhiboi
+gandhiboi committed 12 days ago
+ 
+initial commit
+
+@gandhiboi
+gandhiboi committed 12 days ago
+
